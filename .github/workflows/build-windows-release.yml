@@ -27,13 +27,19 @@ jobs:
           Remove-Item deps\BonjourSDKLike.zip
           "path=$env:GITHUB_WORKSPACE\deps\BonjourSDKLike" >> $env:GITHUB_OUTPUT
 
-      - name: Install Qt
-        uses: jurplel/install-qt-action@v4
+      - name: Install Python
+        uses: actions/setup-python@v5
         with:
-          version: 6.6.2
-          target: desktop
-          arch: win64_msvc2022_64
-          host: windows
+          python-version: '3.11'
+
+      - name: Install aqtinstall
+        run: pip install aqtinstall
+
+      - name: Install Qt via aqtinstall
+        run: |
+          aqt install-qt windows desktop 6.6.0 win64_msvc2022_64 --outputdir C:\Qt
+          $env:PATH = "C:\Qt\6.6.0\msvc2022_64\bin;" + $env:PATH
+          echo "PATH=$env:PATH" >> $env:GITHUB_ENV
 
       - name: Configure build system
         run: |
@@ -43,7 +49,8 @@ jobs:
             -DQT_DEFAULT_MAJOR_VERSION=6 `
             -DINPUTLEAP_VERSION_DESC=release `
             -DDNSSD_LIB="$env:BONJOUR_SDK_HOME\Lib\x64\dnssd.lib" `
-            -D CMAKE_INSTALL_PREFIX=input-leap-install
+            -D CMAKE_INSTALL_PREFIX=input-leap-install `
+            -DCMAKE_PREFIX_PATH="C:\Qt\6.6.0\msvc2022_64"
         env:
           BONJOUR_SDK_HOME: ${{ steps.bonjour.outputs.path }}
 
