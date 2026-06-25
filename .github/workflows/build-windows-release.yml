@@ -22,41 +22,37 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
           New-Item -Force -ItemType Directory -Path .\deps
-          Invoke-WebRequest 'https://github.com/nelsonjchen/mDNSResponder/releases/download/v2019.05.08.1/x64_RelWithDebInfo.zip' -OutFile 'deps\BonjourSDKLike.zip'
+
+          Invoke-WebRequest 'https://github.com/nelsonjchen/mDNSResponder/releases/download/v2019.05.08.1/x64_RelWithDebInfo.zip' -OutFile 'deps\BonjourSDKLike.zip' ;
           Expand-Archive .\deps\BonjourSDKLike.zip -DestinationPath .\deps\BonjourSDKLike
           Remove-Item deps\BonjourSDKLike.zip
+
           "path=$env:GITHUB_WORKSPACE\deps\BonjourSDKLike" >> $env:GITHUB_OUTPUT
 
-      - name: Install Python
-        uses: actions/setup-python@v5
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
         with:
-          python-version: '3.11'
-
-      - name: Install aqtinstall
-        run: pip install aqtinstall
-
-      - name: Install Qt via aqtinstall
-        run: |
-          aqt install-qt windows desktop 6.6.0 win64_msvc2022_64 --outputdir C:\Qt
-          $env:PATH = "C:\Qt\6.6.0\msvc2022_64\bin;" + $env:PATH
-          echo "PATH=$env:PATH" >> $env:GITHUB_ENV
+          version: 6.6
+          cache: true
+          cache-key-prefix: windows-windows-2022-Qt6.6
 
       - name: Configure build system
         run: |
           New-Item -Force -ItemType Directory -Path .\build | Out-Null
+
           cd build
-          cmake -S ..\input-leap -G "Visual Studio 17 2022" -A x64 -D CMAKE_BUILD_TYPE=$env:B_BUILD_TYPE `
+
+          cmake -S ..\input-leap -G "Visual Studio 17 2022" -A x64 -D CMAKE_BUILD_TYPE=$B_BUILD_TYPE `
             -DQT_DEFAULT_MAJOR_VERSION=6 `
-            -DINPUTLEAP_VERSION_DESC=release `
-            -DDNSSD_LIB="$env:BONJOUR_SDK_HOME\Lib\x64\dnssd.lib" `
-            -D CMAKE_INSTALL_PREFIX=input-leap-install `
-            -DCMAKE_PREFIX_PATH="C:\Qt\6.6.0\msvc2022_64"
+            -DINPUTLEAP_VERSION_DESC=${{ (env.B_BUILD_TYPE == 'Release') && 'release' || 'git' }} `
+            -DINPUTLEAP_BUILD_GULRAK_FILESYSTEM=0 `
+            -DDNSSD_LIB="$env:BONJOUR_SDK_HOME\Lib\x64\dnssd.lib" -D CMAKE_INSTALL_PREFIX=input-leap-install
         env:
           BONJOUR_SDK_HOME: ${{ steps.bonjour.outputs.path }}
 
       - name: Run build system
         run: |
-          cmake --build build --config $env:B_BUILD_TYPE --target install --parallel
+          cmake --build build --config $env:B_BUILD_TYPE --target install
 
       - name: Create Archive
         run: Compress-Archive -Path build\input-leap-install\* -DestinationPath InputLeap_3.0.3_windows_qt6.zip
