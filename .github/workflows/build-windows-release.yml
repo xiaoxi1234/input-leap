@@ -31,9 +31,8 @@ jobs:
         uses: jurplel/install-qt-action@v4
         with:
           version: 6.6
-          modules: qtbase qttools qttranslations qtsvg qtdeclarative
-          cache: true
-          cache-key-prefix: windows-qt6
+          target: desktop
+          arch: win64_msvc2022_64
 
       - name: Configure build system
         run: |
