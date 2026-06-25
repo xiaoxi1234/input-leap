@@ -57,16 +57,6 @@ jobs:
       - name: Create Archive
         run: Compress-Archive -Path build\input-leap-install\* -DestinationPath InputLeap_3.0.3_windows_qt6.zip
 
-      - name: Build the Installer
-        run: |
-          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" /Qp .\build\installer-inno\input-leap.iss
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: windows-installer
-          path: .\build\installer-inno\bin\*.exe
-          if-no-files-found: error
-
       - uses: actions/upload-artifact@v4
         with:
           name: windows-portable
